@@ -23,7 +23,8 @@
       precision: Float = 1,
       perceptualPrecision: Float = 1,
       size: CGSize? = nil,
-      traits: UITraitCollection = .init()
+      traits: UITraitCollection = .init(),
+      delay: TimeInterval = 0
     )
       -> Snapshotting
     {
@@ -31,14 +32,26 @@
       return SimplySnapshotting.image(
         precision: precision, perceptualPrecision: perceptualPrecision, scale: traits.displayScale
       ).asyncPullback { viewController in
-        snapshotView(
-          config: size.map { .init(safeArea: config.safeArea, size: $0, traits: config.traits) }
-            ?? config,
-          drawHierarchyInKeyWindow: false,
-          traits: traits,
-          view: viewController.view,
-          viewController: viewController
-        )
+        Async<UIImage> { callback in
+                    let strategy = snapshotView(
+                        config: config,
+                        drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                        traits: traits,
+                        view: controller.view,
+                        viewController: controller
+                    )
+
+                    let duration = duration()
+                    if duration != .zero {
+                        let expectation = XCTestExpectation(description: "Wait")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                            expectation.fulfill()
+                        }
+                        _ = XCTWaiter.wait(for: [expectation], timeout: duration + 1)
+                    }
+                    strategy.run(callback)
+                }
+            }
       }
     }
 
