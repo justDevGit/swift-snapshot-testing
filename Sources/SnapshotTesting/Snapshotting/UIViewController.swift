@@ -1,5 +1,6 @@
 #if os(iOS) || os(tvOS)
   import UIKit
+  import XCTest
 
   extension Snapshotting where Value == UIViewController, Format == UIImage {
     /// A snapshot strategy for comparing view controller views based on pixel equality.
