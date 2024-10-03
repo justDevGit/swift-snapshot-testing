@@ -18,43 +18,39 @@
     ///     human eye.
     ///   - size: A view size override.
     ///   - traits: A trait collection override.
-    public static func image(
-      on config: ViewImageConfig,
-      precision: Float = 1,
-      perceptualPrecision: Float = 1,
-      size: CGSize? = nil,
-      traits: UITraitCollection = .init(),
-      delay: TimeInterval = 0
+public static func image(
+        on config: ViewImageConfig,
+        precision: Float = 1,
+        perceptualPrecision: Float = 1,
+        size: CGSize? = nil,
+        traits: UITraitCollection = .init(),
+        delay: TimeInterval = 0
     )
-      -> Snapshotting
-    {
+        -> Snapshotting {
+        return SimplySnapshotting.image(
+            precision: precision, perceptualPrecision: perceptualPrecision, scale: traits.displayScale
+        ).asyncPullback { _ in
+            Async<UIImage> { callback in
+                let strategy = snapshotView(
+                    config: config,
+                    drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
+                    traits: traits,
+                    view: controller.view,
+                    viewController: controller
+                )
 
-      return SimplySnapshotting.image(
-        precision: precision, perceptualPrecision: perceptualPrecision, scale: traits.displayScale
-      ).asyncPullback { viewController in
-        Async<UIImage> { callback in
-                    let strategy = snapshotView(
-                        config: config,
-                        drawHierarchyInKeyWindow: drawHierarchyInKeyWindow,
-                        traits: traits,
-                        view: controller.view,
-                        viewController: controller
-                    )
-
-                    let duration = duration()
-                    if duration != .zero {
-                        let expectation = XCTestExpectation(description: "Wait")
-                        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-                            expectation.fulfill()
-                        }
-                        _ = XCTWaiter.wait(for: [expectation], timeout: duration + 1)
+                let duration = duration()
+                if duration != .zero {
+                    let expectation = XCTestExpectation(description: "Wait")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                        expectation.fulfill()
                     }
-                    strategy.run(callback)
+                    _ = XCTWaiter.wait(for: [expectation], timeout: duration + 1)
                 }
+                strategy.run(callback)
             }
-      }
+        }
     }
-
     /// A snapshot strategy for comparing view controller views based on pixel equality.
     ///
     /// - Parameters:
