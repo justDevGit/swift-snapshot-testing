@@ -983,7 +983,6 @@
             return
                 (view.snapshot
                     ?? Async { callback in
-                        let res = addImagesForRenderedViews(view).sequence().run
                         addImagesForRenderedViews(view).sequence().run { views in
                             let expectation = XCTestExpectation(description: "Wait")
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
