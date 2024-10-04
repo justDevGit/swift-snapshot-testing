@@ -1,6 +1,5 @@
 #if os(iOS) || os(tvOS)
   import UIKit
-  import XCTest
 
   extension Snapshotting where Value == UIViewController, Format == UIImage {
     /// A snapshot strategy for comparing view controller views based on pixel equality.
@@ -20,37 +19,28 @@
     ///   - size: A view size override.
     ///   - traits: A trait collection override.
     public static func image(
-            on config: ViewImageConfig,
-            precision: Float = 1,
-            perceptualPrecision: Float = 1,
-            size: CGSize? = nil,
-            traits: UITraitCollection = .init(),
-            delay: TimeInterval = 0
-        ) -> Snapshotting {
-            return SimplySnapshotting.image(
-                precision: precision, perceptualPrecision: perceptualPrecision, scale: traits.displayScale
-            ).asyncPullback { viewController in
-                Async<UIImage> { callback in
-                    let strategy = snapshotView(
-                        config: size.map { .init(safeArea: config.safeArea, size: $0, traits: config.traits) }
-                            ?? config,
-                        drawHierarchyInKeyWindow: false,
-                        traits: traits,
-                        view: viewController.view,
-                        viewController: viewController
-                    )
+      on config: ViewImageConfig,
+      precision: Float = 1,
+      perceptualPrecision: Float = 1,
+      size: CGSize? = nil,
+      traits: UITraitCollection = .init()
+    )
+      -> Snapshotting
+    {
 
-                    if delay != .zero {
-                        let expectation = XCTestExpectation(description: "Wait")
-                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                            expectation.fulfill()
-                        }
-                        _ = XCTWaiter.wait(for: [expectation], timeout: delay + 1)
-                    }
-                    strategy.run(callback)
-                }
-            }
-        }
+      return SimplySnapshotting.image(
+        precision: precision, perceptualPrecision: perceptualPrecision, scale: traits.displayScale
+      ).asyncPullback { viewController in
+        snapshotView(
+          config: size.map { .init(safeArea: config.safeArea, size: $0, traits: config.traits) }
+            ?? config,
+          drawHierarchyInKeyWindow: false,
+          traits: traits,
+          view: viewController.view,
+          viewController: viewController
+        )
+      }
+    }
 
     /// A snapshot strategy for comparing view controller views based on pixel equality.
     ///
