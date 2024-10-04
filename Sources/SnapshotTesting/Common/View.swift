@@ -980,32 +980,30 @@
             // NB: Avoid safe area influence.
             if config.safeArea == .zero { view.frame.origin = .init(x: offscreen, y: offscreen) }
 
-            return
-                (view.snapshot
-                    ?? Async { callback in
-                        addImagesForRenderedViews(view).sequence().run { views in
-                            let expectation = XCTestExpectation(description: "Wait")
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                expectation.fulfill()
-                            }
-                            _ = XCTWaiter.wait(for: [expectation], timeout: 2 + 1)
-
-                            callback(
-                                renderer(bounds: view.bounds, for: traits).image { ctx in
-                                    if drawHierarchyInKeyWindow {
-                                        view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
-                                    } else {
-                                        view.layer.render(in: ctx.cgContext)
-                                    }
-                                }
-                            )
-                            views.forEach { $0.removeFromSuperview() }
-                            view.frame = initialFrame
-                        }
-                    }).map {
-                    dispose()
-                    return $0
+            return (view.snapshot ?? Async { callback in
+                let expectation = XCTestExpectation(description: "Wait")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    expectation.fulfill()
                 }
+                _ = XCTWaiter.wait(for: [expectation], timeout: 2 + 1)
+
+                addImagesForRenderedViews(view).sequence().run { views in
+                    callback(
+                        renderer(bounds: view.bounds, for: traits).image { ctx in
+                            if drawHierarchyInKeyWindow {
+                                view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
+                            } else {
+                                view.layer.render(in: ctx.cgContext)
+                            }
+                        }
+                    )
+                    views.forEach { $0.removeFromSuperview() }
+                    view.frame = initialFrame
+                }
+            }).map {
+                dispose()
+                return $0
+            }
         }
 
         private let offscreen: CGFloat = 10000
@@ -1156,3 +1154,4 @@ extension Array {
         }
     }
 }
+
