@@ -980,13 +980,13 @@
             // NB: Avoid safe area influence.
             if config.safeArea == .zero { view.frame.origin = .init(x: offscreen, y: offscreen) }
 
-            return (view.snapshot ?? Async { callback in
-                let expectation = XCTestExpectation(description: "Wait")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    expectation.fulfill()
-                }
-                _ = XCTWaiter.wait(for: [expectation], timeout: 2 + 1)
+            let expectation = XCTestExpectation(description: "Wait")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                expectation.fulfill()
+            }
+            _ = XCTWaiter.wait(for: [expectation], timeout: 2 + 1)
 
+            return (view.snapshot ?? Async { callback in
                 addImagesForRenderedViews(view).sequence().run { views in
                     callback(
                         renderer(bounds: view.bounds, for: traits).image { ctx in
@@ -1154,4 +1154,3 @@ extension Array {
         }
     }
 }
-
